@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 Peptide Price Dashboard</title>
+<style>
+:root{--bg:#ffffff;--bg2:#f5f5f5;--bg3:#eee;--text:#1a1a2e;--text2:#666;--text3:#999;--border:#e0e0e0;--accent:#0984E3;--red:#e74c3c;--green:#27ae60;--radius:8px;--radius-lg:12px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#1a1a2e;--bg2:#252540;--bg3:#2e2e4a;--text:#e8e8f0;--text2:#a0a0b8;--text3:#707088;--border:#3a3a55}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg2);color:var(--text);padding:24px;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto}
+h1{font-size:22px;font-weight:500;margin-bottom:4px}
+.sub{font-size:13px;color:var(--text2);margin-bottom:24px}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:20px}
+.card h2{font-size:18px;font-weight:500;margin-bottom:16px}
+.field-row{display:flex;gap:12px;margin-bottom:12px;align-items:end}
+.field{flex:1;display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:var(--text2);font-weight:500}
+.field select,.field input[type=number]{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:14px;appearance:auto}
+.field input[type=number]{-moz-appearance:textfield;width:100%}
+.field select:disabled,.field input:disabled{opacity:0.5}
+.result-card{display:none;margin-top:16px;padding:16px;background:var(--bg2);border-radius:var(--radius)}
+.result-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}
+.stat{text-align:center}
+.stat .label{font-size:11px;color:var(--text2);margin-bottom:2px}
+.stat .val{font-size:18px;font-weight:500;color:var(--text)}
+.stat .val.hl{color:var(--accent)}
+.savings-bar{margin-top:12px}
+.savings-bar .bar-label{font-size:12px;color:var(--text2);margin-bottom:6px}
+.bar-wrap{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width 0.4s}
+.sav-text{font-size:12px;color:var(--text2);margin-top:4px}
+.add-btn{padding:8px 20px;border:1px solid var(--accent);border-radius:var(--radius);background:var(--accent);color:#fff;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;transition:opacity 0.15s}
+.add-btn:hover{opacity:0.85}
+.add-btn:disabled{opacity:0.4;cursor:default}
+.order-empty{font-size:13px;color:var(--text3);text-align:center;padding:24px 0}
+.order-item{display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.order-item:last-of-type{border-bottom:none}
+.oi-name{font-size:14px}
+.oi-name span{font-size:12px;color:var(--text2)}
+.oi-qty{display:flex;align-items:center;gap:6px}
+.oi-qty button{width:28px;height:28px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.1s}
+.oi-qty button:hover{background:var(--bg2)}
+.oi-qty .qty-val{font-size:14px;font-weight:500;min-width:24px;text-align:center}
+.oi-price{font-size:14px;font-weight:500;min-width:70px;text-align:right}
+.oi-remove{cursor:pointer;color:var(--text3);font-size:18px;padding:0 4px;transition:color 0.1s}
+.oi-remove:hover{color:var(--red)}
+.order-total{display:flex;justify-content:space-between;align-items:center;padding:14px 0 4px;border-top:2px solid var(--text);margin-top:8px}
+.order-total .ot-label{font-size:16px;font-weight:500}
+.order-total .ot-val{font-size:22px;font-weight:500;color:var(--accent)}
+.order-count{font-size:12px;color:var(--text2);margin-top:4px}
+.clear-btn{font-size:12px;color:var(--red);background:none;border:none;cursor:pointer;padding:4px 0;margin-top:8px}
+.clear-btn:hover{text-decoration:underline}
+.btn-row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:background 0.15s}
+.copy-btn:hover{background:var(--bg2)}
+.copied-msg{font-size:12px;color:var(--green);opacity:0;transition:opacity 0.3s}
+.copied-msg.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>2026 Peptide Price Dashboard</h1>
+<p class="sub">peptide-Anne-Dora &middot; All prices USD &middot; 10 vials per kit</p>
+
+<div class="card">
+  <h2>Add to order</h2>
+  <div class="field-row">
+    <div class="field" style="flex:1.3"><label>Peptide</label><select id="pepSel"><option value="">Select a peptide...</option></select></div>
+    <div class="field"><label>Size (per vial)</label><select id="sizeSel" disabled><option value="">Select size...</option></select></div>
+    <div class="field" style="flex:0.5"><label>Qty (kits)</label><input type="number" id="qtyInput" min="1" value="1" disabled></div>
+    <div style="display:flex;align-items:end;padding-bottom:1px"><button class="add-btn" id="addBtn" disabled>Add</button></div>
+  </div>
+  <div class="result-card" id="resCard">
+    <div class="result-grid">
+      <div class="stat"><div class="label">Kit price</div><div class="val" id="rP">—</div></div>
+      <div class="stat"><div class="label">Per vial</div><div class="val" id="rPV">—</div></div>
+      <div class="stat"><div class="label">10+ kits</div><div class="val" id="rP10">—</div></div>
+      <div class="stat"><div class="label">Total qty</div><div class="val" id="rT">—</div></div>
+      <div class="stat"><div class="label">Cost / unit</div><div class="val hl" id="rC">—</div></div>
+    </div>
+    <div class="savings-bar" id="savW" style="display:none">
+      <div class="bar-label">Volume savings vs smallest size</div>
+      <div class="bar-wrap"><div class="bar-fill" id="savB" style="width:0%"></div></div>
+      <div class="sav-text" id="savT"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Order summary</h2>
+  <div id="orderList"><div class="order-empty">No items yet — add products above</div></div>
+  <div id="orderFooter" style="display:none">
+    <div class="order-total"><span class="ot-label">Total</span><span class="ot-val" id="orderTotal">$0</span></div>
+    <div class="order-count" id="orderCount"></div>
+    <button class="clear-btn" id="clearBtn">Clear order</button>
+    <div class="btn-row">
+      <button class="copy-btn" id="copyBtn" onclick="copyOrder()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copy order
+      </button>
+      <span class="copied-msg" id="copiedMsg">Copied!</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const DATA=[{"a":"SM5","n":"Semaglutide","pv":5,"t":50,"u":"mg","p":35,"p10":35,"cpu":0.7,"c":"GLP-1 / Weight Loss"},{"a":"SM10","n":"Semaglutide","pv":10,"t":100,"u":"mg","p":55,"p10":53,"cpu":0.55,"c":"GLP-1 / Weight Loss"},{"a":"SM15","n":"Semaglutide","pv":15,"t":150,"u":"mg","p":65,"p10":63,"cpu":0.4333,"c":"GLP-1 / Weight Loss"},{"a":"SM20","n":"Semaglutide","pv":20,"t":200,"u":"mg","p":75,"p10":73,"cpu":0.375,"c":"GLP-1 / Weight Loss"},{"a":"SM30","n":"Semaglutide","pv":30,"t":300,"u":"mg","p":95,"p10":93,"cpu":0.3167,"c":"GLP-1 / Weight Loss"},{"a":"TR5","n":"Tirzepatide","pv":5,"t":50,"u":"mg","p":40,"p10":40,"cpu":0.8,"c":"GLP-1 / Weight Loss"},{"a":"TR10","n":"Tirzepatide","pv":10,"t":100,"u":"mg","p":50,"p10":49,"cpu":0.5,"c":"GLP-1 / Weight Loss"},{"a":"TR15","n":"Tirzepatide","pv":15,"t":150,"u":"mg","p":60,"p10":59,"cpu":0.4,"c":"GLP-1 / Weight Loss"},{"a":"TR20","n":"Tirzepatide","pv":20,"t":200,"u":"mg","p":80,"p10":78,"cpu":0.4,"c":"GLP-1 / Weight Loss"},{"a":"TR30","n":"Tirzepatide","pv":30,"t":300,"u":"mg","p":100,"p10":98,"cpu":0.3333,"c":"GLP-1 / Weight Loss"},{"a":"TR40","n":"Tirzepatide","pv":40,"t":400,"u":"mg","p":130,"p10":125,"cpu":0.325,"c":"GLP-1 / Weight Loss"},{"a":"TR50","n":"Tirzepatide","pv":50,"t":500,"u":"mg","p":150,"p10":145,"cpu":0.3,"c":"GLP-1 / Weight Loss"},{"a":"TR60","n":"Tirzepatide","pv":60,"t":600,"u":"mg","p":170,"p10":165,"cpu":0.2833,"c":"GLP-1 / Weight Loss"},{"a":"RT5","n":"Retatrutide","pv":5,"t":50,"u":"mg","p":50,"p10":48,"cpu":1.0,"c":"GLP-1 / Weight Loss"},{"a":"RT10","n":"Retatrutide","pv":10,"t":100,"u":"mg","p":80,"p10":78,"cpu":0.8,"c":"GLP-1 / Weight Loss"},{"a":"RT15","n":"Retatrutide","pv":15,"t":150,"u":"mg","p":110,"p10":108,"cpu":0.7333,"c":"GLP-1 / Weight Loss"},{"a":"RT20","n":"Retatrutide","pv":20,"t":200,"u":"mg","p":140,"p10":135,"cpu":0.7,"c":"GLP-1 / Weight Loss"},{"a":"RT30","n":"Retatrutide","pv":30,"t":300,"u":"mg","p":170,"p10":165,"cpu":0.5667,"c":"GLP-1 / Weight Loss"},{"a":"RT40","n":"Retatrutide","pv":40,"t":400,"u":"mg","p":200,"p10":195,"cpu":0.5,"c":"GLP-1 / Weight Loss"},{"a":"RT50","n":"Retatrutide","pv":50,"t":500,"u":"mg","p":230,"p10":225,"cpu":0.46,"c":"GLP-1 / Weight Loss"},{"a":"RT60","n":"Retatrutide","pv":60,"t":600,"u":"mg","p":270,"p10":265,"cpu":0.45,"c":"GLP-1 / Weight Loss"},{"a":"5AD","n":"AOD 9064","pv":5,"t":50,"u":"mg","p":100,"p10":98,"cpu":2.0,"c":"GLP-1 / Weight Loss"},{"a":"10AD","n":"AOD 9064","pv":10,"t":100,"u":"mg","p":180,"p10":175,"cpu":1.8,"c":"GLP-1 / Weight Loss"},{"a":"CGL5","n":"Cagrilintide","pv":5,"t":50,"u":"mg","p":120,"p10":118,"cpu":2.4,"c":"GLP-1 / Weight Loss"},{"a":"CGL10","n":"Cagrilintide","pv":10,"t":100,"u":"mg","p":190,"p10":188,"cpu":1.9,"c":"GLP-1 / Weight Loss"},{"a":"CS5","n":"Cagri+Sema 5mg","pv":5,"t":50,"u":"mg","p":100,"p10":98,"cpu":2.0,"c":"GLP-1 / Weight Loss"},{"a":"CS10","n":"Cagri+Sema 10mg","pv":10,"t":100,"u":"mg","p":170,"p10":165,"cpu":1.7,"c":"GLP-1 / Weight Loss"},{"a":"SUR10","n":"Survodutide","pv":10,"t":100,"u":"mg","p":290,"p10":280,"cpu":2.9,"c":"GLP-1 / Weight Loss"},{"a":"AP2","n":"Adipotide","pv":2,"t":20,"u":"mg","p":90,"p10":88,"cpu":4.5,"c":"GLP-1 / Weight Loss"},{"a":"AP5","n":"Adipotide","pv":5,"t":50,"u":"mg","p":170,"p10":165,"cpu":3.4,"c":"GLP-1 / Weight Loss"},{"a":"CND5","n":"CJC-1295 w/o DAC","pv":5,"t":50,"u":"mg","p":80,"p10":78,"cpu":1.6,"c":"Growth Hormone"},{"a":"CND10","n":"CJC-1295 w/o DAC","pv":10,"t":100,"u":"mg","p":140,"p10":135,"cpu":1.4,"c":"Growth Hormone"},{"a":"CP10","n":"CJC-1295 w/o DAC + IPA","pv":10,"t":100,"u":"mg","p":105,"p10":103,"cpu":1.05,"c":"Growth Hormone"},{"a":"CD5","n":"CJC-1295 w/ DAC","pv":5,"t":50,"u":"mg","p":160,"p10":155,"cpu":3.2,"c":"Growth Hormone"},{"a":"IP5","n":"Ipamorelin","pv":5,"t":50,"u":"mg","p":40,"p10":39,"cpu":0.8,"c":"Growth Hormone"},{"a":"IP10","n":"Ipamorelin","pv":10,"t":100,"u":"mg","p":70,"p10":68,"cpu":0.7,"c":"Growth Hormone"},{"a":"SMO-5","n":"Sermorelin Acetate","pv":5,"t":50,"u":"mg","p":70,"p10":68,"cpu":1.4,"c":"Growth Hormone"},{"a":"SMO-10","n":"Sermorelin Acetate","pv":10,"t":100,"u":"mg","p":120,"p10":115,"cpu":1.2,"c":"Growth Hormone"},{"a":"IG01","n":"IGF-1LR3","pv":0.1,"t":1,"u":"mg","p":40,"p10":40,"cpu":40.0,"c":"Growth Hormone"},{"a":"IG1","n":"IGF-1LR3","pv":1,"t":10,"u":"mg","p":180,"p10":175,"cpu":18.0,"c":"Growth Hormone"},{"a":"TSM5","n":"Tesamorelin","pv":5,"t":50,"u":"mg","p":100,"p10":98,"cpu":2.0,"c":"Growth Hormone"},{"a":"TSM10","n":"Tesamorelin","pv":10,"t":100,"u":"mg","p":180,"p10":175,"cpu":1.8,"c":"Growth Hormone"},{"a":"TSM20","n":"Tesamorelin","pv":20,"t":200,"u":"mg","p":280,"p10":275,"cpu":1.4,"c":"Growth Hormone"},{"a":"MS10","n":"MOTS-C","pv":10,"t":100,"u":"mg","p":60,"p10":59,"cpu":0.6,"c":"Growth Hormone"},{"a":"MS40","n":"MOTS-C","pv":40,"t":400,"u":"mg","p":200,"p10":195,"cpu":0.5,"c":"Growth Hormone"},{"a":"BC5","n":"BPC157","pv":5,"t":50,"u":"mg","p":40,"p10":39,"cpu":0.8,"c":"Healing / Recovery"},{"a":"BC10","n":"BPC157","pv":10,"t":100,"u":"mg","p":65,"p10":64,"cpu":0.65,"c":"Healing / Recovery"},{"a":"BB10","n":"BPC 5mg+TB 5mg","pv":10,"t":100,"u":"mg","p":110,"p10":105,"cpu":1.1,"c":"Healing / Recovery"},{"a":"BB20","n":"BPC 10mg+TB 10mg","pv":20,"t":200,"u":"mg","p":200,"p10":195,"cpu":1.0,"c":"Healing / Recovery"},{"a":"BT5","n":"TB500","pv":5,"t":50,"u":"mg","p":80,"p10":78,"cpu":1.6,"c":"Healing / Recovery"},{"a":"BT10","n":"TB500","pv":10,"t":100,"u":"mg","p":140,"p10":135,"cpu":1.4,"c":"Healing / Recovery"},{"a":"TA5","n":"Thymosin Alpha-1","pv":5,"t":50,"u":"mg","p":100,"p10":98,"cpu":2.0,"c":"Healing / Recovery"},{"a":"TA10","n":"Thymosin Alpha-1","pv":10,"t":100,"u":"mg","p":170,"p10":165,"cpu":1.7,"c":"Healing / Recovery"},{"a":"TY10","n":"Thymalin","pv":10,"t":100,"u":"mg","p":70,"p10":68,"cpu":0.7,"c":"Healing / Recovery"},{"a":"RA10","n":"Ara-290","pv":10,"t":100,"u":"mg","p":75,"p10":73,"cpu":0.75,"c":"Healing / Recovery"},{"a":"DR5","n":"Dermorphin","pv":5,"t":50,"u":"mg","p":40,"p10":39,"cpu":0.8,"c":"Healing / Recovery"},{"a":"375","n":"LL37","pv":5,"t":50,"u":"mg","p":95,"p10":92,"cpu":1.9,"c":"Healing / Recovery"},{"a":"KP5","n":"KPV","pv":5,"t":50,"u":"mg","p":45,"p10":43,"cpu":0.9,"c":"Healing / Recovery"},{"a":"KP10","n":"KPV","pv":10,"t":100,"u":"mg","p":65,"p10":63,"cpu":0.65,"c":"Healing / Recovery"},{"a":"VP5","n":"VIP","pv":5,"t":50,"u":"mg","p":90,"p10":88,"cpu":1.8,"c":"Healing / Recovery"},{"a":"VP10","n":"VIP","pv":10,"t":100,"u":"mg","p":170,"p10":165,"cpu":1.7,"c":"Healing / Recovery"},{"a":"MT1","n":"MT-1","pv":10,"t":100,"u":"mg","p":50,"p10":49,"cpu":0.5,"c":"Skin / Anti-Aging"},{"a":"ML10","n":"MT-2 (Melanotan 2)","pv":10,"t":100,"u":"mg","p":50,"p10":49,"cpu":0.5,"c":"Skin / Anti-Aging"},{"a":"P41","n":"PT-141","pv":10,"t":100,"u":"mg","p":65,"p10":63,"cpu":0.65,"c":"Skin / Anti-Aging"},{"a":"CU50","n":"GHK-CU","pv":50,"t":500,"u":"mg","p":35,"p10":34,"cpu":0.07,"c":"Skin / Anti-Aging"},{"a":"CU100","n":"GHK-CU","pv":100,"t":1000,"u":"mg","p":60,"p10":58,"cpu":0.06,"c":"Skin / Anti-Aging"},{"a":"NP810","n":"SNAP-8","pv":10,"t":100,"u":"mg","p":45,"p10":44,"cpu":0.45,"c":"Skin / Anti-Aging"},{"a":"ET10","n":"Epithalon","pv":10,"t":100,"u":"mg","p":40,"p10":39,"cpu":0.4,"c":"Skin / Anti-Aging"},{"a":"ET50","n":"Epithalon","pv":50,"t":500,"u":"mg","p":140,"p10":138,"cpu":0.28,"c":"Skin / Anti-Aging"},{"a":"F410","n":"FOXO4","pv":10,"t":100,"u":"mg","p":300,"p10":295,"cpu":3.0,"c":"Skin / Anti-Aging"},{"a":"BBKG80","n":"KLOW","pv":80,"t":800,"u":"mg","p":200,"p10":190,"cpu":0.25,"c":"Skin / Anti-Aging"},{"a":"BBG70","n":"GLOW","pv":70,"t":700,"u":"mg","p":185,"p10":175,"cpu":0.2643,"c":"Skin / Anti-Aging"},{"a":"SK5","n":"Selank","pv":5,"t":50,"u":"mg","p":45,"p10":44,"cpu":0.9,"c":"Nootropic / Cognitive"},{"a":"SK10","n":"Selank","pv":10,"t":100,"u":"mg","p":80,"p10":78,"cpu":0.8,"c":"Nootropic / Cognitive"},{"a":"XA5","n":"Semax","pv":5,"t":50,"u":"mg","p":50,"p10":49,"cpu":1.0,"c":"Nootropic / Cognitive"},{"a":"XA10","n":"Semax","pv":10,"t":100,"u":"mg","p":80,"p10":78,"cpu":0.8,"c":"Nootropic / Cognitive"},{"a":"DS5","n":"DSIP","pv":5,"t":50,"u":"mg","p":45,"p10":44,"cpu":0.9,"c":"Nootropic / Cognitive"},{"a":"DS10","n":"DSIP","pv":10,"t":100,"u":"mg","p":85,"p10":83,"cpu":0.85,"c":"Nootropic / Cognitive"},{"a":"MT10","n":"Melatonin","pv":10,"t":100,"u":"mg","p":65,"p10":63,"cpu":0.65,"c":"Nootropic / Cognitive"},{"a":"2S10","n":"SS-31","pv":10,"t":100,"u":"mg","p":95,"p10":93,"cpu":0.95,"c":"Other Peptides"},{"a":"2S50","n":"SS-31","pv":50,"t":500,"u":"mg","p":300,"p10":295,"cpu":0.6,"c":"Other Peptides"},{"a":"HC5000","n":"HCG","pv":5000,"t":50000,"u":"IU","p":85,"p10":83,"cpu":0.0017,"c":"Other Peptides"},{"a":"HC10000","n":"HCG","pv":10000,"t":100000,"u":"IU","p":160,"p10":155,"cpu":0.0016,"c":"Other Peptides"},{"a":"NJ100","n":"NAD","pv":100,"t":1000,"u":"mg","p":40,"p10":39,"cpu":0.04,"c":"Other Peptides"},{"a":"NJ500","n":"NAD","pv":500,"t":5000,"u":"mg","p":75,"p10":74,"cpu":0.015,"c":"Other Peptides"},{"a":"NJ1000","n":"NAD","pv":1000,"t":10000,"u":"mg","p":140,"p10":138,"cpu":0.014,"c":"Other Peptides"},{"a":"AR50","n":"AICAR","pv":50,"t":500,"u":"mg","p":65,"p10":64,"cpu":0.13,"c":"Other Peptides"},{"a":"KS5","n":"KissPeptin-10","pv":5,"t":50,"u":"mg","p":60,"p10":59,"cpu":1.2,"c":"Other Peptides"},{"a":"KS10","n":"KissPeptin-10","pv":10,"t":100,"u":"mg","p":100,"p10":98,"cpu":1.0,"c":"Other Peptides"},{"a":"OT2","n":"Oxytocin Acetate","pv":2,"t":20,"u":"mg","p":28,"p10":28,"cpu":1.4,"c":"Other Peptides"},{"a":"OT5","n":"Oxytocin Acetate","pv":5,"t":50,"u":"mg","p":50,"p10":50,"cpu":1.0,"c":"Other Peptides"},{"a":"OT10","n":"Oxytocin Acetate","pv":10,"t":100,"u":"mg","p":90,"p10":88,"cpu":0.9,"c":"Other Peptides"},{"a":"5AM","n":"5-amino-1mq","pv":5,"t":50,"u":"mg","p":45,"p10":44,"cpu":0.9,"c":"Other Peptides"},{"a":"50AM","n":"5-amino-1mq","pv":50,"t":500,"u":"mg","p":110,"p10":105,"cpu":0.22,"c":"Other Peptides"},{"a":"GTT","n":"Glutathione","pv":600,"t":6000,"u":"mg","p":80,"p10":78,"cpu":0.0133,"c":"Injectables / Accessories"},{"a":"LC216","n":"Lipo-C","pv":10,"t":100,"u":"ml","p":50,"p10":48,"cpu":0.5,"c":"Injectables / Accessories"},{"a":"B12","n":"B12","pv":10,"t":100,"u":"ml","p":20,"p10":20,"cpu":0.2,"c":"Injectables / Accessories"},{"a":"LB","n":"Lemon bottle","pv":10,"t":100,"u":"ml","p":50,"p10":49,"cpu":0.5,"c":"Injectables / Accessories"},{"a":"LC","n":"L-carnitine","pv":600,"t":6000,"u":"mg","p":45,"p10":45,"cpu":0.0075,"c":"Injectables / Accessories"},{"a":"WA3","n":"Sterile water","pv":3,"t":30,"u":"ml","p":8,"p10":8,"cpu":0.2667,"c":"Injectables / Accessories"},{"a":"WA10","n":"Sterile water","pv":10,"t":100,"u":"ml","p":10,"p10":10,"cpu":0.1,"c":"Injectables / Accessories"},{"a":"BA3","n":"Antibacterial water","pv":3,"t":30,"u":"ml","p":8,"p10":8,"cpu":0.2667,"c":"Injectables / Accessories"},{"a":"BA10","n":"Antibacterial water","pv":10,"t":100,"u":"ml","p":10,"p10":10,"cpu":0.1,"c":"Injectables / Accessories"}];
+
+DATA.forEach(d=>{d.ppv=+(d.p/10).toFixed(2)});
+const byName={};
+DATA.forEach(d=>{if(!byName[d.n])byName[d.n]=[];byName[d.n].push(d)});
+const names=Object.keys(byName).sort();
+
+const pepSel=document.getElementById('pepSel');
+const sizeSel=document.getElementById('sizeSel');
+const qtyInput=document.getElementById('qtyInput');
+const addBtn=document.getElementById('addBtn');
+const resCard=document.getElementById('resCard');
+const orderList=document.getElementById('orderList');
+const orderFooter=document.getElementById('orderFooter');
+
+names.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;pepSel.appendChild(o)});
+
+pepSel.addEventListener('change',()=>{
+  sizeSel.innerHTML='<option value="">Select size...</option>';
+  resCard.style.display='none';
+  qtyInput.disabled=true;addBtn.disabled=true;
+  const n=pepSel.value;
+  if(!n){sizeSel.disabled=true;return}
+  sizeSel.disabled=false;
+  byName[n].forEach(d=>{
+    const o=document.createElement('option');o.value=d.a;
+    o.textContent=d.pv+' '+d.u+' per vial ('+d.a+')';
+    sizeSel.appendChild(o);
+  });
+});
+
+sizeSel.addEventListener('change',()=>{
+  const code=sizeSel.value;
+  if(!code){resCard.style.display='none';qtyInput.disabled=true;addBtn.disabled=true;return}
+  const d=DATA.find(x=>x.a===code);
+  resCard.style.display='block';
+  qtyInput.disabled=false;addBtn.disabled=false;qtyInput.value=1;
+  document.getElementById('rP').textContent='$'+d.p.toFixed(0);
+  document.getElementById('rPV').textContent='$'+d.ppv.toFixed(2);
+  document.getElementById('rP10').textContent='$'+d.p10.toFixed(0);
+  document.getElementById('rT').textContent=(d.t>=1?Math.round(d.t):d.t)+' '+d.u;
+  document.getElementById('rC').textContent='$'+d.cpu.toFixed(4)+'/'+d.u;
+  const siblings=byName[d.n];
+  const savW=document.getElementById('savW');
+  if(siblings.length>1){
+    const maxCPU=Math.max(...siblings.map(s=>s.cpu));
+    if(maxCPU!==Math.min(...siblings.map(s=>s.cpu))){
+      savW.style.display='block';
+      const pct=((maxCPU-d.cpu)/maxCPU*100);
+      document.getElementById('savB').style.width=pct.toFixed(0)+'%';
+      document.getElementById('savT').textContent=pct>0?'Saving '+pct.toFixed(0)+'% vs smallest size ($'+maxCPU.toFixed(2)+'/'+d.u+')':'This is the smallest (most expensive per '+d.u+') option';
+    } else savW.style.display='none';
+  } else savW.style.display='none';
+});
+
+let order=[];
+
+function getPrice(item){
+  const d=DATA.find(x=>x.a===item.code);
+  return item.qty>=10?d.p10:d.p;
+}
+
+function renderOrder(){
+  if(!order.length){
+    orderList.innerHTML='<div class="order-empty">No items yet — add products above</div>';
+    orderFooter.style.display='none';
+    return;
+  }
+  let html='';
+  let total=0;
+  let totalKits=0;
+  order.forEach((item,i)=>{
+    const d=DATA.find(x=>x.a===item.code);
+    const unitPrice=getPrice(item);
+    const lineTotal=unitPrice*item.qty;
+    total+=lineTotal;
+    totalKits+=item.qty;
+    const priceNote=item.qty>=10?' <span style="color:var(--green);font-size:11px">10+ rate</span>':'';
+    html+='<div class="order-item">'
+      +'<div class="oi-name">'+d.n+' <span style="color:var(--text3)">('+d.a+')</span><br><span>'+d.pv+d.u+'/vial &middot; $'+unitPrice.toFixed(0)+'/kit'+priceNote+'</span></div>'
+      +'<div class="oi-qty">'
+        +'<button onclick="changeQty('+i+',-1)">−</button>'
+        +'<span class="qty-val">'+item.qty+'</span>'
+        +'<button onclick="changeQty('+i+',1)">+</button>'
+      +'</div>'
+      +'<div class="oi-price">$'+lineTotal.toLocaleString()+'</div>'
+      +'<div class="oi-remove" onclick="removeItem('+i+')">&times;</div>'
+      +'</div>';
+  });
+  orderList.innerHTML=html;
+  orderFooter.style.display='block';
+  document.getElementById('orderTotal').textContent='$'+total.toLocaleString();
+  document.getElementById('orderCount').textContent=order.length+' product'+(order.length>1?'s':'')+', '+totalKits+' total kit'+(totalKits>1?'s':'');
+}
+
+addBtn.addEventListener('click',()=>{
+  const code=sizeSel.value;
+  const qty=Math.max(1,parseInt(qtyInput.value)||1);
+  if(!code)return;
+  const existing=order.find(x=>x.code===code);
+  if(existing){existing.qty+=qty}
+  else{order.push({code,qty})}
+  renderOrder();
+});
+
+function changeQty(i,delta){
+  order[i].qty+=delta;
+  if(order[i].qty<1)order.splice(i,1);
+  renderOrder();
+}
+
+function removeItem(i){
+  order.splice(i,1);
+  renderOrder();
+}
+
+document.getElementById('clearBtn').addEventListener('click',()=>{order=[];renderOrder()});
+
+function buildOrderText(){
+  let lines=[];
+  let total=0;
+  order.forEach(item=>{
+    const d=DATA.find(x=>x.a===item.code);
+    const unitPrice=getPrice(item);
+    const lineTotal=unitPrice*item.qty;
+    total+=lineTotal;
+    lines.push(item.qty+'x '+d.a+' - '+d.n+' - $'+lineTotal);
+  });
+  lines.push('');
+  lines.push('Total: $'+total);
+  return lines.join('\n');
+}
+
+function copyOrder(){
+  if(!order.length)return;
+  var text=buildOrderText();
+  var ta=document.createElement('textarea');
+  ta.value=text;
+  ta.style.position='fixed';
+  ta.style.left='-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  var msg=document.getElementById('copiedMsg');
+  msg.classList.add('show');
+  setTimeout(function(){msg.classList.remove('show')},2000);
+}
+
+renderOrder();
+</script>
+</body>
+</html>
